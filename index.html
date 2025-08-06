@@ -637,6 +637,132 @@
         let licenses = [];
         let settings = {};
 
+// Define all missing functions
+function showTab(tabName) {
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => tab.classList.remove('active'));
+    contents.forEach(content => content.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+}
+
+function connectToSheets() {
+    const url = document.getElementById('webAppUrl').value.trim();
+    
+    if (!url) {
+        alert('กรุณาใส่ Web App URL');
+        return;
+    }
+
+    // Set global variables
+    window.API_URL = url;
+    window.isConnected = true;
+    window.customers = [];
+    window.licenses = [];
+    
+    // Update UI
+    document.getElementById('configSection').style.display = 'none';
+    document.getElementById('connectionStatus').className = 'connection-status status-connected';
+    document.getElementById('connectionStatus').innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
+    
+    // Save to localStorage
+    localStorage.setItem('googleSheetsUrl', url);
+    
+    // Load data
+    loadAllData();
+}
+
+function loadAllData() {
+    if (!window.API_URL) return;
+    
+    // Load customers
+    fetch(window.API_URL + '?path=customers')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.customers = data.data || [];
+                updateCustomersTable();
+                updateCustomerDropdowns();
+            }
+        })
+        .catch(err => console.error('Error loading customers:', err));
+    
+    // Load licenses
+    fetch(window.API_URL + '?path=licenses')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.licenses = data.data || [];
+                updateLicensesTable();
+                updateDashboard();
+            }
+        })
+        .catch(err => console.error('Error loading licenses:', err));
+}
+
+function updateDashboard() {
+    let expiring = 0, expired = 0, active = 0;
+    const today = new Date();
+    
+    if (window.licenses) {
+        window.licenses.forEach(license => {
+            const endDate = new Date(license.EndDate);
+            const days = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+            
+            if (days < 0) expired++;
+            else if (days <= 60) expiring++;
+            else active++;
+        });
+    }
+    
+    document.getElementById('totalCustomers').textContent = window.customers ? window.customers.length : 0;
+    document.getElementById('expiringLicenses').textContent = expiring;
+    document.getElementById('expiredLicenses').textContent = expired;
+    document.getElementById('activeLicenses').textContent = active;
+    
+    // Hide loading
+    document.querySelectorAll('.loading').forEach(el => el.style.display = 'none');
+}
+
+function updateCustomersTable() {
+    const container = document.getElementById('customersTableContainer');
+    if (!container) return;
+    
+    if (!window.customers || window.customers.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
+    }
+}
+
+function updateLicensesTable() {
+    const container = document.getElementById('licensesTableContainer');
+    if (!container) return;
+    
+    if (!window.licenses || window.licenses.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
+    }
+}
+
+function updateCustomerDropdowns() {
+    // Update customer dropdowns if needed
+}
+
+function showAddCustomerModal() {
+    document.getElementById('addCustomerModal').classList.add('active');
+}
+
+function showAddLicenseModal() {
+    document.getElementById('addLicenseModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+
+        
         // Auto connect on page load
 window.onload = function() {
     // Set API URL directly
@@ -645,6 +771,7 @@ window.onload = function() {
     // Auto connect after 1 second
     setTimeout(function() {
         console.log('Auto connecting...');
+        connectToSheets(); // เพิ่มบรรทัดนี้
         // Force hide config box
     document.getElementById('webAppUrl').value = API_URL;
     document.getElementById('configSection').style.display = 'none';
