@@ -1096,8 +1096,20 @@
             
             // Test connection after 1 second
             setTimeout(testConnection, 1000);
+            
+            // เพิ่มส่วนนี้
+            // Bypass CORS for file:// protocol
+            if (window.location.protocol === 'file:') {
+                console.log('Running from file://, attempting direct load...');
+                // Force reload with timeout
+                setTimeout(() => {
+                    loadAllData();
+                }, 1500);
+            }
         };
 
+
+        
         // Click outside modal to close
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
