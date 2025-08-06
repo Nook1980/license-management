@@ -647,44 +647,42 @@
         };
 
         // Connect to Google Sheets
-        async function connectToSheets() {
-            const url = document.getElementById('webAppUrl').value.trim();
-            
-            if (!url) {
-                showToast('กรุณาใส่ Web App URL', 'error');
-                return;
-            }
+async function connectToSheets() {
+    const url = document.getElementById('webAppUrl').value.trim();
+    
+    if (!url) {
+        showToast('กรุณาใส่ Web App URL', 'error');
+        return;
+    }
 
-            API_URL = url;
+    API_URL = url;
+    showToast('กำลังเชื่อมต่อ...', 'warning');
+    
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        
+        if (data.success) {
+            isConnected = true;
+            localStorage.setItem('googleSheetsUrl', url);
             
-            // Test connection
-            showToast('กำลังเชื่อมต่อ...', 'warning');
+            document.getElementById('connectionStatus').className = 'connection-status status-connected';
+            document.getElementById('connectionStatus').innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
+            document.getElementById('configSection').style.display = 'none';
             
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                
-                if (data.success) {
-                    isConnected = true;
-                    localStorage.setItem('googleSheetsUrl', url);
-                    
-                    document.getElementById('connectionStatus').className = 'connection-status status-connected';
-                    document.getElementById('connectionStatus').innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
-                    document.getElementById('configSection').style.display = 'none';
-                    
-                    showToast('เชื่อมต่อสำเร็จ!', 'success');
-                    
-                    // Load data
-                    await loadAllData();
-                } else {
-                    throw new Error('Connection failed');
-                }
-            } catch (error) {
-                console.error('Connection error:', error);
-                showToast('ไม่สามารถเชื่อมต่อได้ กรุณาตรวจสอบ URL', 'error');
-                isConnected = false;
-            }
+            showToast('เชื่อมต่อสำเร็จ!', 'success');
+            
+            // Load data
+            await loadAllData();
+        } else {
+            throw new Error('Connection failed');
         }
+    } catch (error) {
+        console.error('Connection error:', error);
+        showToast('ไม่สามารถเชื่อมต่อได้ กรุณาตรวจสอบ URL', 'error');
+        isConnected = false;
+    }
+}
 
         // Load all data from Google Sheets
         async function loadAllData() {
