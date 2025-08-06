@@ -599,23 +599,56 @@
             resultDiv.className = 'error-message';
             resultDiv.innerHTML = 'กำลังทดสอบการเชื่อมต่อ...';
 
+            console.log('Testing connection to:', API_URL);
+
             try {
-                const response = await fetch(API_URL + '?action=test', {
+                const testUrl = API_URL + '?action=test';
+                console.log('Test URL:', testUrl);
+                
+                const response = await fetch(testUrl, {
                     method: 'GET',
-                    mode: 'cors'
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
                 if (response.ok) {
-                    const data = await response.json();
-                    resultDiv.className = 'success-message';
-                    resultDiv.innerHTML = '✅ เชื่อมต่อสำเร็จ! ' + (data.message || '');
-                    updateConnectionStatus(true);
+                    const text = await response.text();
+                    console.log('Response text:', text);
+                    
+                    try {
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+                        
+                        if (data.success) {
+                            resultDiv.className = 'success-message';
+                            resultDiv.innerHTML = '✅ เชื่อมต่อสำเร็จ! ' + (data.message || '');
+                            updateConnectionStatus(true);
+                        } else {
+                            throw new Error(data.message || 'Connection test failed');
+                        }
+                    } catch (parseError) {
+                        console.error('JSON parse error:', parseError);
+                        resultDiv.className = 'error-message';
+                        resultDiv.innerHTML = '❌ Response is not valid JSON: ' + text.substring(0, 100);
+                        updateConnectionStatus(false);
+                    }
                 } else {
-                    throw new Error('Connection failed');
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
             } catch (error) {
                 resultDiv.className = 'error-message';
-                resultDiv.innerHTML = '❌ ไม่สามารถเชื่อมต่อได้: ' + error.message;
+                resultDiv.innerHTML = '❌ ไม่สามารถเชื่อมต่อได้: ' + error.message + 
+                                     '<br>กรุณาตรวจสอบ: <br>' +
+                                     '1. URL ถูกต้องหรือไม่<br>' +
+                                     '2. Google Apps Script deployed แล้วหรือยัง<br>' +
+                                     '3. Permission ตั้งเป็น "Anyone" หรือไม่';
                 updateConnectionStatus(false);
                 console.error('Connection test failed:', error);
             }
@@ -628,24 +661,43 @@
                 
                 // Load customers
                 try {
-                    const customersResponse = await fetch(`${API_URL}?action=getCustomers`, {
+                    const customersUrl = `${API_URL}?action=getCustomers`;
+                    console.log('Loading customers from:', customersUrl);
+                    
+                    const customersResponse = await fetch(customersUrl, {
                         method: 'GET',
-                        mode: 'cors'
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
                     });
                     
+                    console.log('Customers response status:', customersResponse.status);
+                    
                     if (customersResponse.ok) {
-                        const customersData = await customersResponse.json();
-                        console.log('Customers response:', customersData);
+                        const responseText = await customersResponse.text();
+                        console.log('Customers response text:', responseText);
                         
-                        if (customersData.success) {
-                            customers = customersData.data || [];
-                            updateConnectionStatus(true);
-                        } else {
+                        try {
+                            const customersData = JSON.parse(responseText);
+                            console.log('Customers data:', customersData);
+                            
+                            if (customersData.success) {
+                                customers = customersData.data || [];
+                                updateConnectionStatus(true);
+                            } else {
+                                customers = [];
+                                console.warn('Failed to load customers:', customersData.message);
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing customers JSON:', parseError);
+                            console.error('Response was:', responseText);
                             customers = [];
-                            console.warn('Failed to load customers:', customersData.message);
                         }
                     } else {
-                        throw new Error('Failed to fetch customers');
+                        const errorText = await customersResponse.text();
+                        console.error('Failed to fetch customers:', errorText);
+                        throw new Error('Failed to fetch customers: ' + errorText);
                     }
                 } catch (error) {
                     console.error('Error loading customers:', error);
@@ -654,41 +706,60 @@
 
                 // Load licenses
                 try {
-                    const licensesResponse = await fetch(`${API_URL}?action=getLicenses`, {
+                    const licensesUrl = `${API_URL}?action=getLicenses`;
+                    console.log('Loading licenses from:', licensesUrl);
+                    
+                    const licensesResponse = await fetch(licensesUrl, {
                         method: 'GET',
-                        mode: 'cors'
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
                     });
                     
+                    console.log('Licenses response status:', licensesResponse.status);
+                    
                     if (licensesResponse.ok) {
-                        const licensesData = await licensesResponse.json();
-                        console.log('Licenses response:', licensesData);
+                        const responseText = await licensesResponse.text();
+                        console.log('Licenses response text:', responseText);
                         
-                        if (licensesData.success) {
-                            licenses = licensesData.data || [];
+                        try {
+                            const licensesData = JSON.parse(responseText);
+                            console.log('Licenses data:', licensesData);
                             
-                            // คำนวณสถานะของแต่ละ license
-                            const today = new Date();
-                            licenses = licenses.map(license => {
-                                if (license.EndDate) {
-                                    const endDate = new Date(license.EndDate);
-                                    const days = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-                                    
-                                    if (days < 0) {
-                                        license.Status = 'expired';
-                                    } else if (days <= 60) {
-                                        license.Status = 'warning';
-                                    } else {
-                                        license.Status = 'active';
+                            if (licensesData.success) {
+                                licenses = licensesData.data || [];
+                                
+                                // คำนวณสถานะของแต่ละ license
+                                const today = new Date();
+                                licenses = licenses.map(license => {
+                                    if (license.EndDate) {
+                                        const endDate = new Date(license.EndDate);
+                                        const days = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                                        
+                                        if (days < 0) {
+                                            license.Status = 'expired';
+                                        } else if (days <= 60) {
+                                            license.Status = 'warning';
+                                        } else {
+                                            license.Status = 'active';
+                                        }
                                     }
-                                }
-                                return license;
-                            });
-                        } else {
+                                    return license;
+                                });
+                            } else {
+                                licenses = [];
+                                console.warn('Failed to load licenses:', licensesData.message);
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing licenses JSON:', parseError);
+                            console.error('Response was:', responseText);
                             licenses = [];
-                            console.warn('Failed to load licenses:', licensesData.message);
                         }
                     } else {
-                        throw new Error('Failed to fetch licenses');
+                        const errorText = await licensesResponse.text();
+                        console.error('Failed to fetch licenses:', errorText);
+                        throw new Error('Failed to fetch licenses: ' + errorText);
                     }
                 } catch (error) {
                     console.error('Error loading licenses:', error);
@@ -712,11 +783,11 @@
                 
                 // แสดงข้อความ error ในทุก container
                 document.getElementById('customersTableContainer').innerHTML = 
-                    '<p style="text-align: center; color: #dc3545;">❌ ไม่สามารถโหลดข้อมูลได้</p>';
+                    '<p style="text-align: center; color: #dc3545;">❌ ไม่สามารถโหลดข้อมูลได้<br>Error: ' + error.message + '</p>';
                 document.getElementById('licensesTableContainer').innerHTML = 
-                    '<p style="text-align: center; color: #dc3545;">❌ ไม่สามารถโหลดข้อมูลได้</p>';
+                    '<p style="text-align: center; color: #dc3545;">❌ ไม่สามารถโหลดข้อมูลได้<br>Error: ' + error.message + '</p>';
                 document.getElementById('dashboardTableContainer').innerHTML = 
-                    '<p style="text-align: center; color: #dc3545;">❌ ไม่สามารถโหลดข้อมูลได้</p>';
+                    '<p style="text-align: center; color: #dc3545;">❌ ไม่สามารถโหลดข้อมูลได้<br>Error: ' + error.message + '</p>';
             }
         }
 
