@@ -630,6 +630,179 @@
     </div>
 
     <script>
+
+<script>
+// ============ CRITICAL FUNCTIONS - MUST BE AT TOP ============
+
+// Global variables
+window.API_URL = '';
+window.isConnected = false;
+window.customers = [];
+window.licenses = [];
+
+// Main connect function
+function connectToSheets() {
+    const url = document.getElementById('webAppUrl').value.trim();
+    
+    if (!url) {
+        alert('กรุณาใส่ Web App URL');
+        return;
+    }
+
+    // Set API URL
+    window.API_URL = url;
+    window.isConnected = true;
+    
+    // Hide config section
+    const configSection = document.getElementById('configSection');
+    if (configSection) {
+        configSection.style.display = 'none';
+    }
+    
+    // Update status
+    const statusEl = document.getElementById('connectionStatus');
+    if (statusEl) {
+        statusEl.className = 'connection-status status-connected';
+        statusEl.innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('googleSheetsUrl', url);
+    
+    // Load data
+    loadAllData();
+    
+    alert('เชื่อมต่อสำเร็จ!');
+}
+
+// Load all data function
+function loadAllData() {
+    if (!window.API_URL) {
+        console.log('No API URL set');
+        return;
+    }
+    
+    console.log('Loading data from:', window.API_URL);
+    
+    // Load customers
+    fetch(window.API_URL + '?path=customers')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Customers:', data);
+            if (data.success) {
+                window.customers = data.data || [];
+                updateCustomersTable();
+                updateDashboard();
+            }
+        })
+        .catch(error => console.error('Error loading customers:', error));
+    
+    // Load licenses
+    fetch(window.API_URL + '?path=licenses')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Licenses:', data);
+            if (data.success) {
+                window.licenses = data.data || [];
+                updateLicensesTable();
+                updateDashboard();
+            }
+        })
+        .catch(error => console.error('Error loading licenses:', error));
+}
+
+// Update dashboard
+function updateDashboard() {
+    let expiring = 0, expired = 0, active = 0;
+    const today = new Date();
+    
+    if (window.licenses && window.licenses.length > 0) {
+        window.licenses.forEach(license => {
+            if (license.EndDate) {
+                const endDate = new Date(license.EndDate);
+                const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                
+                if (daysRemaining < 0) expired++;
+                else if (daysRemaining <= 60) expiring++;
+                else active++;
+            }
+        });
+    }
+    
+    // Update counters
+    document.getElementById('totalCustomers').textContent = window.customers ? window.customers.length : 0;
+    document.getElementById('expiringLicenses').textContent = expiring;
+    document.getElementById('expiredLicenses').textContent = expired;
+    document.getElementById('activeLicenses').textContent = active;
+    
+    // Hide loading indicators
+    const loadingElements = document.querySelectorAll('.loading');
+    loadingElements.forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    console.log('Dashboard updated');
+}
+
+// Update tables
+function updateCustomersTable() {
+    const container = document.getElementById('customersTableContainer');
+    if (container) {
+        if (!window.customers || window.customers.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
+        }
+    }
+}
+
+function updateLicensesTable() {
+    const container = document.getElementById('licensesTableContainer');
+    if (container) {
+        if (!window.licenses || window.licenses.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
+        }
+    }
+}
+
+function updateCustomerDropdowns() {
+    // Will implement later
+}
+
+// Tab navigation
+function showTab(tabName) {
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => tab.classList.remove('active'));
+    contents.forEach(content => content.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    const targetContent = document.getElementById(tabName);
+    if (targetContent) {
+        targetContent.classList.add('active');
+    }
+}
+
+// Modal functions
+function showAddCustomerModal() {
+    alert('Add Customer - Coming Soon');
+}
+
+function showAddLicenseModal() {
+    alert('Add License - Coming Soon');
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// ============ END CRITICAL FUNCTIONS ============
+
+// Continue with your existing code below...
+
+        
         // Configuration
         let API_URL = '';
         let isConnected = false;
