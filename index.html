@@ -645,6 +645,9 @@ window.onload = function() {
     // Auto connect after 1 second
     setTimeout(function() {
         console.log('Auto connecting...');
+        // Force hide config box
+    document.getElementById('webAppUrl').value = API_URL;
+    document.getElementById('configSection').style.display = 'none';
         
         // Set global variables
         window.API_URL = API_URL;
