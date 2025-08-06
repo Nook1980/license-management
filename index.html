@@ -57,32 +57,6 @@
             color: #fff;
         }
 
-        .config-section {
-            background: #f8f9fa;
-            padding: 20px;
-            margin: 20px;
-            border-radius: 10px;
-            border: 2px dashed #667eea;
-        }
-
-        .config-section h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .config-form {
-            display: flex;
-            gap: 10px;
-            align-items: end;
-        }
-
-        .config-form input {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-        }
-
         .tabs {
             display: flex;
             background: #f5f5f5;
@@ -335,42 +309,6 @@
             gap: 10px;
         }
 
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 9999;
-            animation: slideIn 0.3s ease;
-        }
-
-        .toast.success {
-            background: #28a745;
-        }
-
-        .toast.error {
-            background: #dc3545;
-        }
-
-        .toast.warning {
-            background: #ffc107;
-            color: #333;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -391,24 +329,9 @@
         <div class="header">
             <h1>📋 License Management System</h1>
             <p>ระบบจัดการ License - Google Sheets Edition</p>
-            <div id="connectionStatus" class="connection-status status-disconnected">
-                ⚠️ ยังไม่ได้เชื่อมต่อ Google Sheets
+            <div id="connectionStatus" class="connection-status status-connected">
+                ✅ เชื่อมต่อ Google Sheets สำเร็จ
             </div>
-        </div>
-
-        <!-- Configuration Section -->
-        <div id="configSection" class="config-section">
-            <h3>🔧 ตั้งค่าการเชื่อมต่อ Google Sheets</h3>
-            <div class="config-form">
-                <div style="flex: 1;">
-                    <label>Web App URL (จาก Google Apps Script):</label>
-                    <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/..." />
-                </div>
-                <button class="btn" onclick="connectToSheets()">เชื่อมต่อ</button>
-            </div>
-            <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                💡 ใส่ URL ที่ได้จากการ Deploy Web App ใน Google Apps Script
-            </p>
         </div>
 
         <div class="tabs">
@@ -443,10 +366,7 @@
 
                 <h3 style="margin-top: 30px;">License ที่ใกล้หมดอายุ</h3>
                 <div id="dashboardTableContainer">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>กำลังโหลดข้อมูล...</p>
-                    </div>
+                    <p style="text-align: center; color: #999;">ไม่มี License ที่ใกล้หมดอายุ</p>
                 </div>
             </div>
 
@@ -458,10 +378,7 @@
                 </div>
 
                 <div id="customersTableContainer">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>กำลังโหลดข้อมูล...</p>
-                    </div>
+                    <p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>
                 </div>
             </div>
 
@@ -473,10 +390,7 @@
                 </div>
 
                 <div id="licensesTableContainer">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>กำลังโหลดข้อมูล...</p>
-                    </div>
+                    <p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>
                 </div>
             </div>
 
@@ -593,74 +507,42 @@
         </div>
     </div>
 
-    <!-- Renew License Modal -->
-    <div id="renewLicenseModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>ต่ออายุ License</h2>
-                <span class="close" onclick="closeModal('renewLicenseModal')">&times;</span>
-            </div>
-            <form id="renewLicenseForm" onsubmit="renewLicense(event)">
-                <input type="hidden" id="renewLicenseId">
-                <div class="form-group">
-                    <label>ลูกค้า</label>
-                    <input type="text" id="renewCustomerName" readonly>
-                </div>
-                <div class="form-group">
-                    <label>ประเภท License</label>
-                    <input type="text" id="renewLicenseType" readonly>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>วันเริ่มต้นใหม่ *</label>
-                        <input type="date" id="renewStartDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>วันหมดอายุใหม่ *</label>
-                        <input type="date" id="renewEndDate" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>หมายเหตุการต่ออายุ</label>
-                    <textarea id="renewNotes" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success">ต่ออายุ</button>
-            </form>
-        </div>
-    </div>
-
-<script>
+    <script>
         // Configuration
-        let API_URL = '';
-        let isConnected = false;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxencF5lsIJeiKNRyQQ3KC0M4zjcfKw29qe6GXIQkh91fXzEL0l4ZtUeRUscBejxTXRlg/exec';
         let customers = [];
         let licenses = [];
-        let settings = {};
 
-        // Main connect function
-        function connectToSheets() {
-            const url = document.getElementById('webAppUrl').value.trim();
+        // Tab navigation
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
             
-            if (!url) {
-                alert('กรุณาใส่ Web App URL');
-                return;
-            }
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
 
-            API_URL = url;
-            isConnected = true;
-            
-            document.getElementById('configSection').style.display = 'none';
-            document.getElementById('connectionStatus').className = 'connection-status status-connected';
-            document.getElementById('connectionStatus').innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
-            
-            localStorage.setItem('googleSheetsUrl', url);
-            loadAllData();
+        // Modal functions
+        function showAddCustomerModal() {
+            document.getElementById('addCustomerModal').classList.add('active');
+        }
+
+        function showAddLicenseModal() {
+            updateCustomerDropdowns();
+            document.getElementById('addLicenseModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            const form = document.querySelector(`#${modalId} form`);
+            if (form) form.reset();
         }
 
         // Load all data
         async function loadAllData() {
-            if (!API_URL) return;
-            
             try {
                 // Load customers
                 const customersResponse = await fetch(`${API_URL}?path=customers`);
@@ -680,44 +562,10 @@
                     updateDashboard();
                 }
 
-                console.log('Data loaded successfully');
+                console.log('Data loaded:', { customers: customers.length, licenses: licenses.length });
             } catch (error) {
                 console.error('Error loading data:', error);
             }
-        }
-
-        // Tab navigation
-        function showTab(tabName) {
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => tab.classList.remove('active'));
-            contents.forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-        }
-
-        // Modal functions
-        function showAddCustomerModal() {
-            if (!isConnected) {
-                alert('กรุณาเชื่อมต่อ Google Sheets ก่อน');
-                return;
-            }
-            document.getElementById('addCustomerModal').classList.add('active');
-        }
-
-        function showAddLicenseModal() {
-            if (!isConnected) {
-                alert('กรุณาเชื่อมต่อ Google Sheets ก่อน');
-                return;
-            }
-            updateCustomerDropdowns();
-            document.getElementById('addLicenseModal').classList.add('active');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
         }
 
         // Add customer
@@ -746,13 +594,15 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert('เพิ่มลูกค้าสำเร็จ');
+                    alert('เพิ่มลูกค้าสำเร็จ!');
                     closeModal('addCustomerModal');
                     await loadAllData();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('เกิดข้อผิดพลาด');
+                alert('เกิดข้อผิดพลาดในการเพิ่มลูกค้า');
             }
         }
 
@@ -763,9 +613,14 @@
             const customerId = document.getElementById('licenseCustomer').value;
             const customer = customers.find(c => c.ID == customerId);
             
+            if (!customer) {
+                alert('กรุณาเลือกลูกค้า');
+                return;
+            }
+
             const licenseData = {
                 CustomerID: customerId,
-                CustomerName: customer ? customer.CompanyName : '',
+                CustomerName: customer.CompanyName,
                 Type: document.getElementById('licenseType').value,
                 LicenseKey: document.getElementById('licenseKey').value,
                 StartDate: document.getElementById('startDate').value,
@@ -785,13 +640,15 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    alert('เพิ่ม License สำเร็จ');
+                    alert('เพิ่ม License สำเร็จ!');
                     closeModal('addLicenseModal');
                     await loadAllData();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('เกิดข้อผิดพลาด');
+                alert('เกิดข้อผิดพลาดในการเพิ่ม License');
             }
         }
 
@@ -815,15 +672,35 @@
             document.getElementById('expiringLicenses').textContent = expiring;
             document.getElementById('expiredLicenses').textContent = expired;
             document.getElementById('activeLicenses').textContent = active;
-            
-            // Hide loading
-            document.querySelectorAll('.loading').forEach(el => el.style.display = 'none');
+
+            // Update dashboard table
+            const container = document.getElementById('dashboardTableContainer');
+            if (expiring > 0) {
+                let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>วันหมดอายุ</th><th>เหลือเวลา</th></tr></thead><tbody>';
+                
+                licenses.forEach(license => {
+                    if (license.Status === 'warning') {
+                        const endDate = new Date(license.EndDate);
+                        const days = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                        html += `<tr>
+                            <td>${license.CustomerName}</td>
+                            <td>${license.Type}</td>
+                            <td>${formatDate(license.EndDate)}</td>
+                            <td>${days} วัน</td>
+                        </tr>`;
+                    }
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p style="text-align: center; color: #999;">ไม่มี License ที่ใกล้หมดอายุ</p>';
+            }
         }
 
         // Update customers table
         function updateCustomersTable() {
             const container = document.getElementById('customersTableContainer');
-            if (!container) return;
             
             if (customers.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
@@ -831,15 +708,17 @@
             }
 
             let html = '<table><thead><tr><th>รหัสลูกค้า</th><th>ชื่อบริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th>เบอร์โทร</th></tr></thead><tbody>';
+            
             customers.forEach(customer => {
                 html += `<tr>
-                    <td>${customer.CustomerID || '-'}</td>
-                    <td>${customer.CompanyName || '-'}</td>
-                    <td>${customer.ContactName || '-'}</td>
-                    <td>${customer.Email || '-'}</td>
+                    <td>${customer.CustomerID}</td>
+                    <td>${customer.CompanyName}</td>
+                    <td>${customer.ContactName}</td>
+                    <td>${customer.Email}</td>
                     <td>${customer.Phone || '-'}</td>
                 </tr>`;
             });
+            
             html += '</tbody></table>';
             container.innerHTML = html;
         }
@@ -847,25 +726,29 @@
         // Update licenses table
         function updateLicensesTable() {
             const container = document.getElementById('licensesTableContainer');
-            if (!container) return;
             
             if (licenses.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
                 return;
             }
 
-            let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>License Key</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>License Key</th><th>วันเริ่มต้น</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
+            
             licenses.forEach(license => {
                 const status = license.Status || 'active';
                 const statusText = status === 'expired' ? 'หมดอายุ' : status === 'warning' ? 'ใกล้หมดอายุ' : 'ปกติ';
+                const statusClass = `status-badge status-${status}`;
+                
                 html += `<tr>
-                    <td>${license.CustomerName || '-'}</td>
-                    <td>${license.Type || '-'}</td>
+                    <td>${license.CustomerName}</td>
+                    <td>${license.Type}</td>
                     <td>${license.LicenseKey || '-'}</td>
-                    <td>${license.EndDate || '-'}</td>
-                    <td><span class="status-badge status-${status}">${statusText}</span></td>
+                    <td>${formatDate(license.StartDate)}</td>
+                    <td>${formatDate(license.EndDate)}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
                 </tr>`;
             });
+            
             html += '</tbody></table>';
             container.innerHTML = html;
         }
@@ -881,34 +764,55 @@
             }
         }
 
-        // Utility functions
+        // Save settings
+        async function saveSettings() {
+            const settingsData = {
+                defaultNotifyDays: document.getElementById('defaultNotifyDays').value,
+                notificationEmail: document.getElementById('notificationEmail').value
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'updateSettings',
+                        settings: settingsData
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('บันทึกการตั้งค่าสำเร็จ!');
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
+            }
+        }
+
+        // Sync data
+        async function syncData() {
+            await loadAllData();
+            alert('Sync ข้อมูลสำเร็จ!');
+        }
+
+        // Utility function
         function formatDate(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
-            return date.toLocaleDateString('th-TH');
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
         }
 
-        function getStatusBadge(status) {
-            const badges = {
-                'active': '<span class="status-badge status-active">ปกติ</span>',
-                'warning': '<span class="status-badge status-warning">ใกล้หมดอายุ</span>',
-                'expired': '<span class="status-badge status-expired">หมดอายุ</span>'
-            };
-            return badges[status] || badges['active'];
-        }
-
-        // Auto-connect on page load
+        // Initialize on page load
         window.onload = function() {
-            const API_URL = 'https://script.google.com/macros/s/AKfycbxencF5lsIJeiKNRyQQ3KC0M4zjcfKw29qe6GXIQkh91fXzEL0l4ZtUeRUscBejxTXRlg/exec';
-            
-            // Auto-fill URL
-            document.getElementById('webAppUrl').value = API_URL;
-            
-            // Auto-connect after 1 second
-            setTimeout(function() {
-                console.log('Auto connecting...');
-                connectToSheets();
-            }, 1000);
+            loadAllData();
         };
     </script>
 </body>
