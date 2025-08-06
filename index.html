@@ -637,14 +637,210 @@
         let licenses = [];
         let settings = {};
 
-        // Load saved configuration
-        window.onload = function() {
-            const savedUrl = localStorage.getItem('googleSheetsUrl');
-            if (savedUrl) {
-                document.getElementById('webAppUrl').value = savedUrl;
-                connectToSheets();
+        // Auto connect on page load
+window.onload = function() {
+    // Set API URL directly
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxencF5lsIJeiKNRyQQ3KC0M4zjcfKw29qe6GXIQkh91fXzEL0l4ZtUeRUscBejxTXRlg/exec';
+    
+    // Auto connect after 1 second
+    setTimeout(function() {
+        console.log('Auto connecting...');
+        
+        // Set global variables
+        window.API_URL = API_URL;
+        window.isConnected = true;
+        window.customers = [];
+        window.licenses = [];
+        
+        // Hide configuration section
+        const configSection = document.getElementById('configSection');
+        if (configSection) {
+            configSection.style.display = 'none';
+        }
+        
+        // Update connection status
+        const statusElement = document.getElementById('connectionStatus');
+        if (statusElement) {
+            statusElement.className = 'connection-status status-connected';
+            statusElement.innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
+        }
+        
+        // Function to update tables
+        window.updateCustomersTable = function() {
+            const container = document.getElementById('customersTableContainer');
+            if (!container) return;
+            
+            if (!window.customers || window.customers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
+                return;
+            }
+            
+            let html = '<table><thead><tr><th>รหัสลูกค้า</th><th>ชื่อบริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th>เบอร์โทร</th></tr></thead><tbody>';
+            window.customers.forEach(customer => {
+                html += `<tr>
+                    <td>${customer.CustomerID || '-'}</td>
+                    <td>${customer.CompanyName || '-'}</td>
+                    <td>${customer.ContactName || '-'}</td>
+                    <td>${customer.Email || '-'}</td>
+                    <td>${customer.Phone || '-'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        };
+        
+        window.updateLicensesTable = function() {
+            const container = document.getElementById('licensesTableContainer');
+            if (!container) return;
+            
+            if (!window.licenses || window.licenses.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
+                return;
+            }
+            
+            let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>License Key</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
+            window.licenses.forEach(license => {
+                const status = license.Status || 'active';
+                const statusText = status === 'expired' ? 'หมดอายุ' : status === 'warning' ? 'ใกล้หมดอายุ' : 'ปกติ';
+                const statusClass = `status-badge status-${status}`;
+                
+                html += `<tr>
+                    <td>${license.CustomerName || '-'}</td>
+                    <td>${license.Type || '-'}</td>
+                    <td>${license.LicenseKey || '-'}</td>
+                    <td>${license.EndDate || '-'}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        };
+        
+        window.updateDashboard = function() {
+            let expiring = 0, expired = 0, active = 0;
+            const today = new Date();
+            
+            if (window.licenses && window.licenses.length > 0) {
+                window.licenses.forEach(license => {
+                    if (license.EndDate) {
+                        const endDate = new Date(license.EndDate);
+                        const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                        
+                        if (daysRemaining < 0) {
+                            expired++;
+                        } else if (daysRemaining <= 60) {
+                            expiring++;
+                        } else {
+                            active++;
+                        }
+                    }
+                });
+            }
+            
+            // Update counters
+            document.getElementById('totalCustomers').textContent = window.customers ? window.customers.length : 0;
+            document.getElementById('expiringLicenses').textContent = expiring;
+            document.getElementById('expiredLicenses').textContent = expired;
+            document.getElementById('activeLicenses').textContent = active;
+            
+            // Update dashboard table
+            const dashboardContainer = document.getElementById('dashboardTableContainer');
+            if (dashboardContainer) {
+                if (expiring > 0) {
+                    let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
+                    
+                    window.licenses.forEach(license => {
+                        if (license.Status === 'warning') {
+                            html += `<tr>
+                                <td>${license.CustomerName || '-'}</td>
+                                <td>${license.Type || '-'}</td>
+                                <td>${license.EndDate || '-'}</td>
+                                <td><span class="status-badge status-warning">ใกล้หมดอายุ</span></td>
+                            </tr>`;
+                        }
+                    });
+                    
+                    html += '</tbody></table>';
+                    dashboardContainer.innerHTML = html;
+                } else {
+                    dashboardContainer.innerHTML = '<p style="text-align: center; color: #999;">ไม่มี License ที่ใกล้หมดอายุ</p>';
+                }
             }
         };
+        
+        // Load data from API
+        console.log('Loading data from:', API_URL);
+        
+        // Load customers
+        fetch(API_URL + '?path=customers')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Customers data:', data);
+                if (data.success) {
+                    window.customers = data.data || [];
+                    updateCustomersTable();
+                }
+                
+                // Load licenses
+                return fetch(API_URL + '?path=licenses');
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Licenses data:', data);
+                if (data.success) {
+                    window.licenses = data.data || [];
+                    updateLicensesTable();
+                    updateDashboard();
+                }
+                
+                // Hide all loading indicators
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                console.log('✅ System ready!');
+                console.log('Customers:', window.customers.length, 'Licenses:', window.licenses.length);
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                // Hide loading indicators even on error
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.style.display = 'none';
+                });
+            });
+            
+    }, 1000); // Wait 1 second after page load
+};
+
+// Make functions globally available
+window.showTab = function(tabName) {
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => tab.classList.remove('active'));
+    contents.forEach(content => content.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+};
+
+window.closeModal = function(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+    const form = document.querySelector(`#${modalId} form`);
+    if (form) form.reset();
+};
+
+window.showToast = function(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
 
         // Connect to Google Sheets
 async function connectToSheets() {
