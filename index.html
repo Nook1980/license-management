@@ -602,7 +602,9 @@
             console.log('Testing connection to:', API_URL);
 
             try {
-                const testUrl = API_URL + '?action=test';
+                // ตรวจสอบว่า API_URL มี ? อยู่แล้วหรือไม่
+                const separator = API_URL.includes('?') ? '&' : '?';
+                const testUrl = `${API_URL}${separator}action=test`;
                 console.log('Test URL:', testUrl);
                 
                 const response = await fetch(testUrl, {
@@ -614,7 +616,6 @@
                 });
 
                 console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
 
                 if (response.ok) {
                     const text = await response.text();
@@ -661,7 +662,9 @@
                 
                 // Load customers
                 try {
-                    const customersUrl = `${API_URL}?action=getCustomers`;
+                    // ตรวจสอบว่า API_URL มี ? อยู่แล้วหรือไม่
+                    const separator = API_URL.includes('?') ? '&' : '?';
+                    const customersUrl = `${API_URL}${separator}action=getCustomers`;
                     console.log('Loading customers from:', customersUrl);
                     
                     const customersResponse = await fetch(customersUrl, {
@@ -706,7 +709,9 @@
 
                 // Load licenses
                 try {
-                    const licensesUrl = `${API_URL}?action=getLicenses`;
+                    // ตรวจสอบว่า API_URL มี ? อยู่แล้วหรือไม่
+                    const separator = API_URL.includes('?') ? '&' : '?';
+                    const licensesUrl = `${API_URL}${separator}action=getLicenses`;
                     console.log('Loading licenses from:', licensesUrl);
                     
                     const licensesResponse = await fetch(licensesUrl, {
@@ -1014,7 +1019,7 @@
         // Save settings
         async function saveSettings() {
             // Update API URL if changed
-            const newApiUrl = document.getElementById('apiUrl').value;
+            const newApiUrl = document.getElementById('apiUrl').value.trim();
             if (newApiUrl && newApiUrl !== API_URL) {
                 API_URL = newApiUrl;
                 console.log('API URL updated to:', API_URL);
