@@ -632,177 +632,6 @@
     <script>
 
 <script>
-// ============ CRITICAL FUNCTIONS - MUST BE AT TOP ============
-
-// Global variables
-window.API_URL = '';
-window.isConnected = false;
-window.customers = [];
-window.licenses = [];
-
-// Main connect function
-function connectToSheets() {
-    const url = document.getElementById('webAppUrl').value.trim();
-    
-    if (!url) {
-        alert('กรุณาใส่ Web App URL');
-        return;
-    }
-
-    // Set API URL
-    window.API_URL = url;
-    window.isConnected = true;
-    
-    // Hide config section
-    const configSection = document.getElementById('configSection');
-    if (configSection) {
-        configSection.style.display = 'none';
-    }
-    
-    // Update status
-    const statusEl = document.getElementById('connectionStatus');
-    if (statusEl) {
-        statusEl.className = 'connection-status status-connected';
-        statusEl.innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
-    }
-    
-    // Save to localStorage
-    localStorage.setItem('googleSheetsUrl', url);
-    
-    // Load data
-    loadAllData();
-    
-    alert('เชื่อมต่อสำเร็จ!');
-}
-
-// Load all data function
-function loadAllData() {
-    if (!window.API_URL) {
-        console.log('No API URL set');
-        return;
-    }
-    
-    console.log('Loading data from:', window.API_URL);
-    
-    // Load customers
-    fetch(window.API_URL + '?path=customers')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Customers:', data);
-            if (data.success) {
-                window.customers = data.data || [];
-                updateCustomersTable();
-                updateDashboard();
-            }
-        })
-        .catch(error => console.error('Error loading customers:', error));
-    
-    // Load licenses
-    fetch(window.API_URL + '?path=licenses')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Licenses:', data);
-            if (data.success) {
-                window.licenses = data.data || [];
-                updateLicensesTable();
-                updateDashboard();
-            }
-        })
-        .catch(error => console.error('Error loading licenses:', error));
-}
-
-// Update dashboard
-function updateDashboard() {
-    let expiring = 0, expired = 0, active = 0;
-    const today = new Date();
-    
-    if (window.licenses && window.licenses.length > 0) {
-        window.licenses.forEach(license => {
-            if (license.EndDate) {
-                const endDate = new Date(license.EndDate);
-                const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-                
-                if (daysRemaining < 0) expired++;
-                else if (daysRemaining <= 60) expiring++;
-                else active++;
-            }
-        });
-    }
-    
-    // Update counters
-    document.getElementById('totalCustomers').textContent = window.customers ? window.customers.length : 0;
-    document.getElementById('expiringLicenses').textContent = expiring;
-    document.getElementById('expiredLicenses').textContent = expired;
-    document.getElementById('activeLicenses').textContent = active;
-    
-    // Hide loading indicators
-    const loadingElements = document.querySelectorAll('.loading');
-    loadingElements.forEach(el => {
-        el.style.display = 'none';
-    });
-    
-    console.log('Dashboard updated');
-}
-
-// Update tables
-function updateCustomersTable() {
-    const container = document.getElementById('customersTableContainer');
-    if (container) {
-        if (!window.customers || window.customers.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
-        }
-    }
-}
-
-function updateLicensesTable() {
-    const container = document.getElementById('licensesTableContainer');
-    if (container) {
-        if (!window.licenses || window.licenses.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
-        }
-    }
-}
-
-function updateCustomerDropdowns() {
-    // Will implement later
-}
-
-// Tab navigation
-function showTab(tabName) {
-    const tabs = document.querySelectorAll('.tab');
-    const contents = document.querySelectorAll('.tab-content');
-    
-    tabs.forEach(tab => tab.classList.remove('active'));
-    contents.forEach(content => content.classList.remove('active'));
-    
-    event.target.classList.add('active');
-    const targetContent = document.getElementById(tabName);
-    if (targetContent) {
-        targetContent.classList.add('active');
-    }
-}
-
-// Modal functions
-function showAddCustomerModal() {
-    alert('Add Customer - Coming Soon');
-}
-
-function showAddLicenseModal() {
-    alert('Add License - Coming Soon');
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
-// ============ END CRITICAL FUNCTIONS ============
-
-// Continue with your existing code below...
-
-        
         // Configuration
         let API_URL = '';
         let isConnected = false;
@@ -810,392 +639,36 @@ function closeModal(modalId) {
         let licenses = [];
         let settings = {};
 
-// Define all missing functions
-function showTab(tabName) {
-    const tabs = document.querySelectorAll('.tab');
-    const contents = document.querySelectorAll('.tab-content');
-    
-    tabs.forEach(tab => tab.classList.remove('active'));
-    contents.forEach(content => content.classList.remove('active'));
-    
-    event.target.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
-}
-
-function connectToSheets() {
-    const url = document.getElementById('webAppUrl').value.trim();
-    
-    if (!url) {
-        alert('กรุณาใส่ Web App URL');
-        return;
-    }
-
-    // Set global variables
-    window.API_URL = url;
-    window.isConnected = true;
-    window.customers = [];
-    window.licenses = [];
-    
-    // Update UI
-    document.getElementById('configSection').style.display = 'none';
-    document.getElementById('connectionStatus').className = 'connection-status status-connected';
-    document.getElementById('connectionStatus').innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
-    
-    // Save to localStorage
-    localStorage.setItem('googleSheetsUrl', url);
-    
-    // Load data
-    loadAllData();
-}
-
-function loadAllData() {
-    if (!window.API_URL) return;
-    
-    // Load customers
-    fetch(window.API_URL + '?path=customers')
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                window.customers = data.data || [];
-                updateCustomersTable();
-                updateCustomerDropdowns();
-            }
-        })
-        .catch(err => console.error('Error loading customers:', err));
-    
-    // Load licenses
-    fetch(window.API_URL + '?path=licenses')
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                window.licenses = data.data || [];
-                updateLicensesTable();
-                updateDashboard();
-            }
-        })
-        .catch(err => console.error('Error loading licenses:', err));
-}
-
-function updateDashboard() {
-    let expiring = 0, expired = 0, active = 0;
-    const today = new Date();
-    
-    if (window.licenses) {
-        window.licenses.forEach(license => {
-            const endDate = new Date(license.EndDate);
-            const days = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+        // Main connect function
+        function connectToSheets() {
+            const url = document.getElementById('webAppUrl').value.trim();
             
-            if (days < 0) expired++;
-            else if (days <= 60) expiring++;
-            else active++;
-        });
-    }
-    
-    document.getElementById('totalCustomers').textContent = window.customers ? window.customers.length : 0;
-    document.getElementById('expiringLicenses').textContent = expiring;
-    document.getElementById('expiredLicenses').textContent = expired;
-    document.getElementById('activeLicenses').textContent = active;
-    
-    // Hide loading
-    document.querySelectorAll('.loading').forEach(el => el.style.display = 'none');
-}
-
-function updateCustomersTable() {
-    const container = document.getElementById('customersTableContainer');
-    if (!container) return;
-    
-    if (!window.customers || window.customers.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
-    }
-}
-
-function updateLicensesTable() {
-    const container = document.getElementById('licensesTableContainer');
-    if (!container) return;
-    
-    if (!window.licenses || window.licenses.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
-    }
-}
-
-function updateCustomerDropdowns() {
-    // Update customer dropdowns if needed
-}
-
-function showAddCustomerModal() {
-    document.getElementById('addCustomerModal').classList.add('active');
-}
-
-function showAddLicenseModal() {
-    document.getElementById('addLicenseModal').classList.add('active');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
-
-        
-        // Auto connect on page load
-window.onload = function() {
-    // Set API URL directly
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxencF5lsIJeiKNRyQQ3KC0M4zjcfKw29qe6GXIQkh91fXzEL0l4ZtUeRUscBejxTXRlg/exec';
-    
-    // Auto connect after 1 second
-    setTimeout(function() {
-        console.log('Auto connecting...');
-        connectToSheets(); // เพิ่มบรรทัดนี้
-        // Force hide config box
-    document.getElementById('webAppUrl').value = API_URL;
-    document.getElementById('configSection').style.display = 'none';
-        
-        // Set global variables
-        window.API_URL = API_URL;
-        window.isConnected = true;
-        window.customers = [];
-        window.licenses = [];
-        
-        // Hide configuration section
-        const configSection = document.getElementById('configSection');
-        if (configSection) {
-            configSection.style.display = 'none';
-        }
-        
-        // Update connection status
-        const statusElement = document.getElementById('connectionStatus');
-        if (statusElement) {
-            statusElement.className = 'connection-status status-connected';
-            statusElement.innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
-        }
-        
-        // Function to update tables
-        window.updateCustomersTable = function() {
-            const container = document.getElementById('customersTableContainer');
-            if (!container) return;
-            
-            if (!window.customers || window.customers.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
+            if (!url) {
+                alert('กรุณาใส่ Web App URL');
                 return;
             }
-            
-            let html = '<table><thead><tr><th>รหัสลูกค้า</th><th>ชื่อบริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th>เบอร์โทร</th></tr></thead><tbody>';
-            window.customers.forEach(customer => {
-                html += `<tr>
-                    <td>${customer.CustomerID || '-'}</td>
-                    <td>${customer.CompanyName || '-'}</td>
-                    <td>${customer.ContactName || '-'}</td>
-                    <td>${customer.Email || '-'}</td>
-                    <td>${customer.Phone || '-'}</td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        };
-        
-        window.updateLicensesTable = function() {
-            const container = document.getElementById('licensesTableContainer');
-            if (!container) return;
-            
-            if (!window.licenses || window.licenses.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
-                return;
-            }
-            
-            let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>License Key</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
-            window.licenses.forEach(license => {
-                const status = license.Status || 'active';
-                const statusText = status === 'expired' ? 'หมดอายุ' : status === 'warning' ? 'ใกล้หมดอายุ' : 'ปกติ';
-                const statusClass = `status-badge status-${status}`;
-                
-                html += `<tr>
-                    <td>${license.CustomerName || '-'}</td>
-                    <td>${license.Type || '-'}</td>
-                    <td>${license.LicenseKey || '-'}</td>
-                    <td>${license.EndDate || '-'}</td>
-                    <td><span class="${statusClass}">${statusText}</span></td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        };
-        
-        window.updateDashboard = function() {
-            let expiring = 0, expired = 0, active = 0;
-            const today = new Date();
-            
-            if (window.licenses && window.licenses.length > 0) {
-                window.licenses.forEach(license => {
-                    if (license.EndDate) {
-                        const endDate = new Date(license.EndDate);
-                        const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-                        
-                        if (daysRemaining < 0) {
-                            expired++;
-                        } else if (daysRemaining <= 60) {
-                            expiring++;
-                        } else {
-                            active++;
-                        }
-                    }
-                });
-            }
-            
-            // Update counters
-            document.getElementById('totalCustomers').textContent = window.customers ? window.customers.length : 0;
-            document.getElementById('expiringLicenses').textContent = expiring;
-            document.getElementById('expiredLicenses').textContent = expired;
-            document.getElementById('activeLicenses').textContent = active;
-            
-            // Update dashboard table
-            const dashboardContainer = document.getElementById('dashboardTableContainer');
-            if (dashboardContainer) {
-                if (expiring > 0) {
-                    let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
-                    
-                    window.licenses.forEach(license => {
-                        if (license.Status === 'warning') {
-                            html += `<tr>
-                                <td>${license.CustomerName || '-'}</td>
-                                <td>${license.Type || '-'}</td>
-                                <td>${license.EndDate || '-'}</td>
-                                <td><span class="status-badge status-warning">ใกล้หมดอายุ</span></td>
-                            </tr>`;
-                        }
-                    });
-                    
-                    html += '</tbody></table>';
-                    dashboardContainer.innerHTML = html;
-                } else {
-                    dashboardContainer.innerHTML = '<p style="text-align: center; color: #999;">ไม่มี License ที่ใกล้หมดอายุ</p>';
-                }
-            }
-        };
-        
-        // Load data from API
-        console.log('Loading data from:', API_URL);
-        
-        // Load customers
-        fetch(API_URL + '?path=customers')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Customers data:', data);
-                if (data.success) {
-                    window.customers = data.data || [];
-                    updateCustomersTable();
-                }
-                
-                // Load licenses
-                return fetch(API_URL + '?path=licenses');
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Licenses data:', data);
-                if (data.success) {
-                    window.licenses = data.data || [];
-                    updateLicensesTable();
-                    updateDashboard();
-                }
-                
-                // Hide all loading indicators
-                document.querySelectorAll('.loading').forEach(el => {
-                    el.style.display = 'none';
-                });
-                
-                console.log('✅ System ready!');
-                console.log('Customers:', window.customers.length, 'Licenses:', window.licenses.length);
-            })
-            .catch(error => {
-                console.error('Error loading data:', error);
-                // Hide loading indicators even on error
-                document.querySelectorAll('.loading').forEach(el => {
-                    el.style.display = 'none';
-                });
-            });
-            
-    }, 1000); // Wait 1 second after page load
-};
 
-// Make functions globally available
-window.showTab = function(tabName) {
-    const tabs = document.querySelectorAll('.tab');
-    const contents = document.querySelectorAll('.tab-content');
-    
-    tabs.forEach(tab => tab.classList.remove('active'));
-    contents.forEach(content => content.classList.remove('active'));
-    
-    event.target.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
-};
-
-window.closeModal = function(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-    const form = document.querySelector(`#${modalId} form`);
-    if (form) form.reset();
-};
-
-window.showToast = function(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-};
-
-        // Connect to Google Sheets
-async function connectToSheets() {
-    const url = document.getElementById('webAppUrl').value.trim();
-    
-    if (!url) {
-        showToast('กรุณาใส่ Web App URL', 'error');
-        return;
-    }
-
-    API_URL = url;
-    showToast('กำลังเชื่อมต่อ...', 'warning');
-    
-    try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        
-        if (data.success) {
+            API_URL = url;
             isConnected = true;
-            localStorage.setItem('googleSheetsUrl', url);
             
+            document.getElementById('configSection').style.display = 'none';
             document.getElementById('connectionStatus').className = 'connection-status status-connected';
             document.getElementById('connectionStatus').innerHTML = '✅ เชื่อมต่อ Google Sheets สำเร็จ';
-            document.getElementById('configSection').style.display = 'none';
             
-            showToast('เชื่อมต่อสำเร็จ!', 'success');
-            
-            // Load data
-            await loadAllData();
-        } else {
-            throw new Error('Connection failed');
+            localStorage.setItem('googleSheetsUrl', url);
+            loadAllData();
         }
-    } catch (error) {
-        console.error('Connection error:', error);
-        showToast('ไม่สามารถเชื่อมต่อได้ กรุณาตรวจสอบ URL', 'error');
-        isConnected = false;
-    }
-}
 
-        // Load all data from Google Sheets
+        // Load all data
         async function loadAllData() {
-            if (!isConnected) {
-                showToast('กรุณาเชื่อมต่อ Google Sheets ก่อน', 'error');
-                return;
-            }
-
+            if (!API_URL) return;
+            
             try {
                 // Load customers
                 const customersResponse = await fetch(`${API_URL}?path=customers`);
                 const customersData = await customersResponse.json();
                 if (customersData.success) {
-                    customers = customersData.data;
+                    customers = customersData.data || [];
                     updateCustomersTable();
                     updateCustomerDropdowns();
                 }
@@ -1204,37 +677,18 @@ async function connectToSheets() {
                 const licensesResponse = await fetch(`${API_URL}?path=licenses`);
                 const licensesData = await licensesResponse.json();
                 if (licensesData.success) {
-                    licenses = licensesData.data;
+                    licenses = licensesData.data || [];
                     updateLicensesTable();
                     updateDashboard();
                 }
 
-                // Load settings
-                const settingsResponse = await fetch(`${API_URL}?path=settings`);
-                const settingsData = await settingsResponse.json();
-                if (settingsData.success) {
-                    settings = settingsData.data;
-                    if (settings.defaultNotifyDays) {
-                        document.getElementById('defaultNotifyDays').value = settings.defaultNotifyDays;
-                    }
-                    if (settings.notificationEmail) {
-                        document.getElementById('notificationEmail').value = settings.notificationEmail;
-                    }
-                }
-
-                showToast('โหลดข้อมูลสำเร็จ', 'success');
+                console.log('Data loaded successfully');
             } catch (error) {
                 console.error('Error loading data:', error);
-                showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
             }
         }
 
-        // Sync data
-        async function syncData() {
-            await loadAllData();
-        }
-
-        // Tab switching
+        // Tab navigation
         function showTab(tabName) {
             const tabs = document.querySelectorAll('.tab');
             const contents = document.querySelectorAll('.tab-content');
@@ -1249,7 +703,7 @@ async function connectToSheets() {
         // Modal functions
         function showAddCustomerModal() {
             if (!isConnected) {
-                showToast('กรุณาเชื่อมต่อ Google Sheets ก่อน', 'error');
+                alert('กรุณาเชื่อมต่อ Google Sheets ก่อน');
                 return;
             }
             document.getElementById('addCustomerModal').classList.add('active');
@@ -1257,7 +711,7 @@ async function connectToSheets() {
 
         function showAddLicenseModal() {
             if (!isConnected) {
-                showToast('กรุณาเชื่อมต่อ Google Sheets ก่อน', 'error');
+                alert('กรุณาเชื่อมต่อ Google Sheets ก่อน');
                 return;
             }
             updateCustomerDropdowns();
@@ -1266,11 +720,9 @@ async function connectToSheets() {
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
-            const form = document.querySelector(`#${modalId} form`);
-            if (form) form.reset();
         }
 
-        // Customer functions
+        // Add customer
         async function addCustomer(event) {
             event.preventDefault();
             
@@ -1287,9 +739,7 @@ async function connectToSheets() {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         action: 'addCustomer',
                         customer: customerData
@@ -1297,50 +747,18 @@ async function connectToSheets() {
                 });
 
                 const result = await response.json();
-                
                 if (result.success) {
-                    showToast('เพิ่มลูกค้าสำเร็จ', 'success');
+                    alert('เพิ่มลูกค้าสำเร็จ');
                     closeModal('addCustomerModal');
                     await loadAllData();
-                } else {
-                    throw new Error(result.message);
                 }
             } catch (error) {
-                console.error('Error adding customer:', error);
-                showToast('เกิดข้อผิดพลาดในการเพิ่มลูกค้า', 'error');
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาด');
             }
         }
 
-        async function deleteCustomer(id) {
-            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบลูกค้านี้?')) return;
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'deleteCustomer',
-                        id: id
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('ลบลูกค้าสำเร็จ', 'success');
-                    await loadAllData();
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                console.error('Error deleting customer:', error);
-                showToast('เกิดข้อผิดพลาดในการลบลูกค้า', 'error');
-            }
-        }
-
-        // License functions
+        // Add license
         async function addLicense(event) {
             event.preventDefault();
             
@@ -1349,7 +767,7 @@ async function connectToSheets() {
             
             const licenseData = {
                 CustomerID: customerId,
-                CustomerName: customer.CompanyName,
+                CustomerName: customer ? customer.CompanyName : '',
                 Type: document.getElementById('licenseType').value,
                 LicenseKey: document.getElementById('licenseKey').value,
                 StartDate: document.getElementById('startDate').value,
@@ -1360,9 +778,7 @@ async function connectToSheets() {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         action: 'addLicense',
                         license: licenseData
@@ -1370,253 +786,132 @@ async function connectToSheets() {
                 });
 
                 const result = await response.json();
-                
                 if (result.success) {
-                    showToast('เพิ่ม License สำเร็จ', 'success');
+                    alert('เพิ่ม License สำเร็จ');
                     closeModal('addLicenseModal');
                     await loadAllData();
-                } else {
-                    throw new Error(result.message);
                 }
             } catch (error) {
-                console.error('Error adding license:', error);
-                showToast('เกิดข้อผิดพลาดในการเพิ่ม License', 'error');
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาด');
             }
         }
 
-        function showRenewModal(licenseId) {
-            const license = licenses.find(l => l.ID == licenseId);
-            if (license) {
-                document.getElementById('renewLicenseId').value = license.ID;
-                document.getElementById('renewCustomerName').value = license.CustomerName;
-                document.getElementById('renewLicenseType').value = license.Type;
-                
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('renewStartDate').value = today;
-                
-                const newEndDate = new Date();
-                newEndDate.setFullYear(newEndDate.getFullYear() + 1);
-                document.getElementById('renewEndDate').value = newEndDate.toISOString().split('T')[0];
-                
-                document.getElementById('renewLicenseModal').classList.add('active');
-            }
-        }
-
-        async function renewLicense(event) {
-            event.preventDefault();
+        // Update dashboard
+        function updateDashboard() {
+            let expiring = 0, expired = 0, active = 0;
+            const today = new Date();
             
-            const renewData = {
-                StartDate: document.getElementById('renewStartDate').value,
-                EndDate: document.getElementById('renewEndDate').value,
-                Notes: document.getElementById('renewNotes').value
-            };
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'renewLicense',
-                        id: document.getElementById('renewLicenseId').value,
-                        renewData: renewData
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('ต่ออายุ License สำเร็จ', 'success');
-                    closeModal('renewLicenseModal');
-                    await loadAllData();
-                } else {
-                    throw new Error(result.message);
+            licenses.forEach(license => {
+                if (license.EndDate) {
+                    const endDate = new Date(license.EndDate);
+                    const days = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (days < 0) expired++;
+                    else if (days <= 60) expiring++;
+                    else active++;
                 }
-            } catch (error) {
-                console.error('Error renewing license:', error);
-                showToast('เกิดข้อผิดพลาดในการต่ออายุ License', 'error');
-            }
+            });
+            
+            document.getElementById('totalCustomers').textContent = customers.length;
+            document.getElementById('expiringLicenses').textContent = expiring;
+            document.getElementById('expiredLicenses').textContent = expired;
+            document.getElementById('activeLicenses').textContent = active;
+            
+            // Hide loading
+            document.querySelectorAll('.loading').forEach(el => el.style.display = 'none');
         }
 
-        async function deleteLicense(id) {
-            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบ License นี้?')) return;
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'deleteLicense',
-                        id: id
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('ลบ License สำเร็จ', 'success');
-                    await loadAllData();
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                console.error('Error deleting license:', error);
-                showToast('เกิดข้อผิดพลาดในการลบ License', 'error');
-            }
-        }
-
-        // Settings functions
-        async function saveSettings() {
-            const settingsData = {
-                defaultNotifyDays: document.getElementById('defaultNotifyDays').value,
-                notificationEmail: document.getElementById('notificationEmail').value
-            };
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'updateSettings',
-                        settings: settingsData
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('บันทึกการตั้งค่าสำเร็จ', 'success');
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                console.error('Error saving settings:', error);
-                showToast('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า', 'error');
-            }
-        }
-
-        // Update UI functions
+        // Update customers table
         function updateCustomersTable() {
             const container = document.getElementById('customersTableContainer');
+            if (!container) return;
             
             if (customers.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลลูกค้า</p>';
                 return;
             }
 
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>รหัสลูกค้า</th>
-                            <th>ชื่อบริษัท</th>
-                            <th>ผู้ติดต่อ</th>
-                            <th>อีเมล</th>
-                            <th>เบอร์โทร</th>
-                            <th>การดำเนินการ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
+            let html = '<table><thead><tr><th>รหัสลูกค้า</th><th>ชื่อบริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th>เบอร์โทร</th></tr></thead><tbody>';
             customers.forEach(customer => {
-                html += `
-                    <tr>
-                        <td>${customer.CustomerID}</td>
-                        <td>${customer.CompanyName}</td>
-                        <td>${customer.ContactName}</td>
-                        <td>${customer.Email}</td>
-                        <td>${customer.Phone || '-'}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-danger" onclick="deleteCustomer('${customer.ID}')">ลบ</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                html += `<tr>
+                    <td>${customer.CustomerID || '-'}</td>
+                    <td>${customer.CompanyName || '-'}</td>
+                    <td>${customer.ContactName || '-'}</td>
+                    <td>${customer.Email || '-'}</td>
+                    <td>${customer.Phone || '-'}</td>
+                </tr>`;
             });
-
             html += '</tbody></table>';
             container.innerHTML = html;
-            
-            document.getElementById('totalCustomers').textContent = customers.length;
         }
 
+        // Update licenses table
         function updateLicensesTable() {
             const container = document.getElementById('licensesTableContainer');
+            if (!container) return;
             
             if (licenses.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูล License</p>';
                 return;
             }
 
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ลูกค้า</th>
-                            <th>ประเภท</th>
-                            <th>License Key</th>
-                            <th>วันเริ่มต้น</th>
-                            <th>วันหมดอายุ</th>
-                            <th>สถานะ</th>
-                            <th>การดำเนินการ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
+            let html = '<table><thead><tr><th>ลูกค้า</th><th>ประเภท</th><th>License Key</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>';
             licenses.forEach(license => {
-                const statusBadge = getStatusBadge(license.Status);
-                html += `
-                    <tr>
-                        <td>${license.CustomerName}</td>
-                        <td>${license.Type}</td>
-                        <td>${license.LicenseKey || '-'}</td>
-                        <td>${formatDate(license.StartDate)}</td>
-                        <td>${formatDate(license.EndDate)}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-success" onclick="showRenewModal('${license.ID}')">ต่ออายุ</button>
-                                <button class="btn btn-danger" onclick="deleteLicense('${license.ID}')">ลบ</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                const status = license.Status || 'active';
+                const statusText = status === 'expired' ? 'หมดอายุ' : status === 'warning' ? 'ใกล้หมดอายุ' : 'ปกติ';
+                html += `<tr>
+                    <td>${license.CustomerName || '-'}</td>
+                    <td>${license.Type || '-'}</td>
+                    <td>${license.LicenseKey || '-'}</td>
+                    <td>${license.EndDate || '-'}</td>
+                    <td><span class="status-badge status-${status}">${statusText}</span></td>
+                </tr>`;
             });
-
             html += '</tbody></table>';
             container.innerHTML = html;
         }
 
-        function updateDashboard() {
-            let expiring = 0;
-            let expired = 0;
-            let active = 0;
-            
-            let dashboardHtml = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ลูกค้า</th>
-                            <th>ประเภท</th>
-                            <th>วันหมดอายุ</th>
-                            <th>สถานะ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+        // Update customer dropdowns
+        function updateCustomerDropdowns() {
+            const select = document.getElementById('licenseCustomer');
+            if (select) {
+                select.innerHTML = '<option value="">เลือกลูกค้า</option>';
+                customers.forEach(customer => {
+                    select.innerHTML += `<option value="${customer.ID}">${customer.CompanyName}</option>`;
+                });
+            }
+        }
 
-            licenses.forEach(license => {
-                if (license.Status === 'expired') {
-                    expired++;
-                } else if (license.Status === 'warning') {
-                    expiring++;
-                    
-                    const statusBadge = getStatusBadge(license.
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH');
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'active': '<span class="status-badge status-active">ปกติ</span>',
+                'warning': '<span class="status-badge status-warning">ใกล้หมดอายุ</span>',
+                'expired': '<span class="status-badge status-expired">หมดอายุ</span>'
+            };
+            return badges[status] || badges['active'];
+        }
+
+        // Auto-connect on page load
+        window.onload = function() {
+            const API_URL = 'https://script.google.com/macros/s/AKfycbxencF5lsIJeiKNRyQQ3KC0M4zjcfKw29qe6GXIQkh91fXzEL0l4ZtUeRUscBejxTXRlg/exec';
+            
+            // Auto-fill URL
+            document.getElementById('webAppUrl').value = API_URL;
+            
+            // Auto-connect after 1 second
+            setTimeout(function() {
+                console.log('Auto connecting...');
+                connectToSheets();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
